@@ -607,7 +607,7 @@ Para dudas, problemas o sugerencias:
 
 - **Issues**: [GitHub Issues](https://github.com/jeremigio2706/Nutrichain-dev/issues)
 - **Documentación**: [Wiki del Proyecto](https://github.com/jeremigio2706/Nutrichain-dev/wiki)
-- **Email**: <soporte@nutrichain.com>
+- **Email**: <jetradercu@yahoo.com>
 
 ## 📄 Licencia
 

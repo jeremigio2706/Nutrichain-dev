@@ -912,8 +912,7 @@ php app/console doctrine:migrations:migrate
 ### Contacto
 
 - **Issues**: [GitHub Issues](https://github.com/jeremigio2706/Nutrichain-dev/issues)
-- **Wiki**: [Documentación del Proyecto](https://github.com/jeremigio2706/Nutrichain-dev/wiki)
-- **Email**: <desarrollo@nutrichain.com>
+- **Email**: <jetradercu@yahoo.com>
 
 ## 📄 Licencia
 

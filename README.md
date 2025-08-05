@@ -439,29 +439,6 @@ docker system prune -f
 ./manage_stack.sh up
 ```
 
-## 🤝 Contribución
-
-### 📋 Guías de Desarrollo
-
-1. **Estructura de Código**: Seguir patrones establecidos en cada servicio
-2. **Testing**: Implementar pruebas unitarias e integración
-3. **Documentación**: Mantener OpenAPI actualizado
-4. **Logs**: Usar logging estructurado con contexto
-
-### 🔄 Workflow de Desarrollo
-
-```bash
-# Desarrollo local
-./manage_stack.sh dev
-
-# Ejecutar pruebas
-./almacen-service/test_almacen_implementation.sh
-./catalogo-service/run_all_tests.sh
-
-# Validar arquitectura
-python validate_senior_architecture.py
-```
-
 ## 📝 Licencia
 
 Este proyecto está bajo la Licencia MIT. Ver `LICENSE` para más detalles.
@@ -470,10 +447,10 @@ Este proyecto está bajo la Licencia MIT. Ver `LICENSE` para más detalles.
 
 Para soporte técnico o preguntas sobre implementación:
 
-- 📧 Email: <soporte@nutrichain.com>
+- 📧 Email: <jetradercu@yahoo.com>
 - 📖 Documentación: Ver `/docs` en cada servicio
 - 🐛 Issues: Usar GitHub Issues para reportar problemas
 
 ---
 
-🌟 **NutriChain** - Arquitectura de Microservicios de Nivel Senior para Logística Alimentaria
+🌟 **NutriChain** - Arquitectura de Microservicios

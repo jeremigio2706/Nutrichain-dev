@@ -1,0 +1,8 @@
+catalogo:
+  resource: "@CatalogoBundle/Resources/config/routing.yml"
+  prefix: /api
+
+# API Documentation
+NelmioApiDocBundle:
+  resource: "@NelmioApiDocBundle/Resources/config/routing.yml"
+  prefix: /api/doc

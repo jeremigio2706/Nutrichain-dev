@@ -1,0 +1,84 @@
+# Rutas para el API de Catálogo
+
+# Rutas de Categorías
+categorias_list:
+  path: /categorias
+  defaults: { _controller: CatalogoBundle:Categoria:list }
+  methods: [GET]
+
+categoria_get:
+  path: /categorias/{id}
+  defaults: { _controller: CatalogoBundle:Categoria:get }
+  methods: [GET]
+  requirements:
+    id: \d+
+
+categoria_create:
+  path: /categorias
+  defaults: { _controller: CatalogoBundle:Categoria:create }
+  methods: [POST]
+
+categoria_update:
+  path: /categorias/{id}
+  defaults: { _controller: CatalogoBundle:Categoria:update }
+  methods: [PUT]
+  requirements:
+    id: \d+
+
+categoria_delete:
+  path: /categorias/{id}
+  defaults: { _controller: CatalogoBundle:Categoria:delete }
+  methods: [DELETE]
+  requirements:
+    id: \d+
+
+# Rutas de Productos
+productos_list:
+  path: /productos
+  defaults: { _controller: CatalogoBundle:Producto:list }
+  methods: [GET]
+
+producto_get:
+  path: /productos/{id}
+  defaults: { _controller: CatalogoBundle:Producto:get }
+  methods: [GET]
+  requirements:
+    id: \d+
+
+producto_create:
+  path: /productos
+  defaults: { _controller: CatalogoBundle:Producto:create }
+  methods: [POST]
+
+producto_update:
+  path: /productos/{id}
+  defaults: { _controller: CatalogoBundle:Producto:update }
+  methods: [PUT]
+  requirements:
+    id: \d+
+
+producto_delete:
+  path: /productos/{id}
+  defaults: { _controller: CatalogoBundle:Producto:delete }
+  methods: [DELETE]
+  requirements:
+    id: \d+
+
+# Rutas adicionales para búsquedas
+productos_search:
+  path: /productos/search
+  defaults: { _controller: CatalogoBundle:Producto:search }
+  methods: [GET]
+
+productos_by_categoria:
+  path: /categorias/{categoriaId}/productos
+  defaults: { _controller: CatalogoBundle:Producto:byCategoria }
+  methods: [GET]
+  requirements:
+    categoriaId: \d+
+
+# Ruta de estado del servicio
+api_status:
+  path: /status
+  defaults: { _controller: CatalogoBundle:Api:status }
+  methods: [GET]

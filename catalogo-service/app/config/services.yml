@@ -1,0 +1,27 @@
+# app/config/services.yml
+services:
+  # Listener para manejar excepciones y devolver respuestas JSON
+  catalogo.listener.api_exception_listener:
+    class: CatalogoBundle\Listener\ApiExceptionListener
+    arguments: ["%kernel.debug%", "@logger"]
+    tags:
+      - name: kernel.event_listener
+        event: kernel.exception
+        method: onKernelException
+        priority: 100
+
+  # Servicio principal para la lógica de negocio de Categorías
+  catalogo.service.categoria:
+    class: CatalogoBundle\Service\CategoriaService
+    arguments:
+      - "@doctrine.orm.entity_manager"
+      - "@logger"
+      - "@validator"
+
+  # Servicio principal para la lógica de negocio de Productos
+  catalogo.service.producto:
+    class: CatalogoBundle\Service\ProductoService
+    arguments:
+      - "@doctrine.orm.entity_manager"
+      - "@logger"
+      - "@validator"

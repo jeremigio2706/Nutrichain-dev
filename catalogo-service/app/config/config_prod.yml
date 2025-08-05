@@ -1,0 +1,32 @@
+imports:
+  - { resource: config.yml }
+
+# === CONFIGURACIÓN OPTIMIZADA DE LOGS PARA DOCKER + LOKI ===
+monolog:
+  handlers:
+    # Handler principal: JSON a stdout para que Docker lo capture
+    main:
+      type: stream
+      path: "php://stdout"
+      level: info
+      formatter: monolog.formatter.json
+      channels: ["!event", "!doctrine", "!security"]
+
+    # Handler para errores críticos: también a stdout
+    critical:
+      type: stream
+      path: "php://stdout"
+      level: critical
+      formatter: monolog.formatter.json
+
+    # Handler de consola para comandos
+    console:
+      type: console
+      channels: ["!event", "!doctrine", "!security"]
+# === CONFIGURACIÓN DE CACHE DE DOCTRINE PARA PRODUCCIÓN ===
+# Descomenta si tienes APCu disponible
+#doctrine:
+#    orm:
+#        metadata_cache_driver: apcu
+#        result_cache_driver: apcu
+#        query_cache_driver: apcu

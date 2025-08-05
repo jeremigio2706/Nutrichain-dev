@@ -42,24 +42,28 @@ El sistema está compuesto por 4 microservicios principales que implementan el p
 ## 🛍️ Funcionalidades Principales
 
 ### 📦 Microservicio Catálogo (PHP/Symfony)
+
 - ✅ Gestión completa de productos y categorías
 - 🔍 Validaciones de unicidad y campos obligatorios
 - 🖼️ Manejo de imágenes de productos
 - 📊 API REST con documentación Swagger
 
 ### 🏪 Microservicio Almacén (Python/FastAPI)
+
 - 📈 Control de stock en tiempo real
 - 🔄 Gestión de movimientos (entradas/salidas/transferencias)
 - 🏢 Administración de múltiples almacenes
 - ⚡ Validaciones de negocio con fail-fast
 
 ### 🛒 Microservicio Tienda (Python/FastAPI)
+
 - 👥 Gestión de clientes y pedidos
 - 🔒 Sistema de reservas de stock
 - 📋 Orquestación de transacciones distribuidas
 - 🚚 Gestión de envíos y devoluciones
 
 ### 📊 Microservicio Reportes (Python/FastAPI)
+
 - 📈 Consolidación de datos en tiempo real
 - 📋 Reportes de stock valorizado
 - 📅 Análisis de pedidos por período
@@ -77,18 +81,21 @@ El sistema está compuesto por 4 microservicios principales que implementan el p
 ### 🔧 Configuración Inicial
 
 1. **Clonar el repositorio**
+
 ```bash
 git clone https://github.com/jeremigio2706/Nutrichain-dev.git
 cd nutrichain_dev
 ```
 
 2. **Configurar permisos**
+
 ```bash
 chmod +x manage_stack.sh
 chmod +x postgres/init-multiple-dbs.sh
 ```
 
 3. **Configuración inicial completa**
+
 ```bash
 ./manage_stack.sh setup
 ```
@@ -140,22 +147,23 @@ chmod +x postgres/init-multiple-dbs.sh
 
 | Servicio | URL Base | Documentación API |
 |----------|----------|-------------------|
-| **Catálogo** | http://localhost:8000 | http://localhost:8000/api/docs |
-| **Almacén** | http://localhost:8001 | http://localhost:8001/docs |
-| **Tienda** | http://localhost:8003 | http://localhost:8003/docs |
-| **Reportes** | http://localhost:8002 | http://localhost:8002/docs |
+| **Catálogo** | <http://localhost:8000> | <http://localhost:8000/api/docs> |
+| **Almacén** | <http://localhost:8001> | <http://localhost:8001/docs> |
+| **Tienda** | <http://localhost:8003> | <http://localhost:8003/docs> |
+| **Reportes** | <http://localhost:8002> | <http://localhost:8002/docs> |
 
 ### 📊 Herramientas de Monitoreo
 
 | Herramienta | URL | Credenciales |
 |-------------|-----|--------------|
-| **Grafana** | http://localhost:3000 | admin / password |
+| **Grafana** | <http://localhost:3000> | admin / password |
 | **PostgreSQL** | localhost:5432 | user / password |
 | **Redis** | localhost:6379 | (sin autenticación) |
 
 ### 🛍️ Endpoints Principales - Tienda Service
 
 #### 👥 Gestión de Clientes
+
 ```http
 POST   /api/v1/clientes              # Crear cliente
 GET    /api/v1/clientes/{id}         # Obtener cliente
@@ -164,6 +172,7 @@ GET    /api/v1/clientes              # Listar clientes
 ```
 
 #### 🛒 Gestión de Pedidos (Flujo Principal)
+
 ```http
 POST   /api/v1/pedidos                    # Crear pedido con reserva
 GET    /api/v1/pedidos/{id}               # Consultar estado de pedido
@@ -172,6 +181,7 @@ GET    /api/v1/pedidos                    # Listar pedidos
 ```
 
 #### 🚚 Gestión de Envíos
+
 ```http
 POST   /api/v1/pedidos/{id}/envio         # Crear envío
 PUT    /api/v1/envios/{id}               # Actualizar envío
@@ -179,6 +189,7 @@ GET    /api/v1/envios/{id}               # Consultar envío
 ```
 
 #### 🔄 Gestión de Devoluciones
+
 ```http
 POST   /api/v1/devoluciones              # Solicitar devolución
 PUT    /api/v1/devoluciones/{id}         # Procesar devolución
@@ -188,6 +199,7 @@ GET    /api/v1/devoluciones/{id}         # Consultar devolución
 ### 📦 Endpoints Principales - Almacén Service
 
 #### 📊 Gestión de Stock
+
 ```http
 GET    /api/v1/stock/consolidado          # Stock consolidado
 GET    /api/v1/stock/producto/{id}        # Stock por producto
@@ -195,6 +207,7 @@ POST   /api/v1/stock/consultar-disponibilidad  # Validar disponibilidad
 ```
 
 #### 🔄 Gestión de Movimientos
+
 ```http
 POST   /api/v1/movimientos/entrada        # Registrar entrada
 POST   /api/v1/movimientos/salida         # Registrar salida
@@ -205,6 +218,7 @@ GET    /api/v1/movimientos                # Historial de movimientos
 ### 🛍️ Endpoints Principales - Catálogo Service
 
 #### 📦 Gestión de Productos
+
 ```http
 POST   /api/productos                     # Crear producto
 GET    /api/productos/{id}                # Obtener producto
@@ -213,6 +227,7 @@ GET    /api/productos                     # Listar productos
 ```
 
 #### 📂 Gestión de Categorías
+
 ```http
 POST   /api/categorias                    # Crear categoría
 GET    /api/categorias                    # Listar categorías
@@ -222,6 +237,7 @@ PUT    /api/categorias/{id}               # Actualizar categoría
 ### 📊 Endpoints Principales - Reportes Service
 
 #### 📈 Reportes de Stock
+
 ```http
 GET    /api/v1/reportes/stock/total                    # Stock total valorizado
 GET    /api/v1/reportes/stock/producto/{id}            # Stock por producto
@@ -229,6 +245,7 @@ GET    /api/v1/reportes/stock/almacen/{id}             # Stock por almacén
 ```
 
 #### 📅 Reportes de Pedidos
+
 ```http
 GET    /api/v1/reportes/pedidos/rango                  # Pedidos por fechas
 GET    /api/v1/reportes/pedidos/cliente/{id}           # Pedidos por cliente
@@ -236,6 +253,7 @@ GET    /api/v1/reportes/pedidos/estadisticas           # Estadísticas de ventas
 ```
 
 #### 🔍 Trazabilidad
+
 ```http
 GET    /api/v1/reportes/trazabilidad/producto/{id}     # Trazabilidad completa
 GET    /api/v1/reportes/movimientos/historico          # Histórico de movimientos
@@ -292,6 +310,7 @@ sequenceDiagram
 ## 🗃️ Esquema de Base de Datos
 
 ### 🏪 Tienda Database
+
 ```sql
 -- Tabla principal de clientes
 clientes (id, nombre, apellido, email, telefono, direccion, activo)
@@ -313,6 +332,7 @@ devoluciones (id, pedido_id, producto_id, cantidad, motivo, estado)
 ```
 
 ### 📦 Almacén Database
+
 ```sql
 -- Gestión de almacenes
 almacenes (id, nombre, direccion, tipo, activo)
@@ -385,22 +405,26 @@ services:
 ### 🔧 Problemas Comunes
 
 1. **Servicios no responden**
+
 ```bash
 ./manage_stack.sh status
 ./manage_stack.sh logs [servicio]
 ```
 
 2. **Error de conexión a base de datos**
+
 ```bash
 docker-compose exec db pg_isready -U user
 ```
 
 3. **Redis no disponible**
+
 ```bash
 docker-compose exec redis redis-cli ping
 ```
 
 4. **Puertos ocupados**
+
 ```bash
 # Verificar puertos en uso
 netstat -tlnp | grep :8000
@@ -446,7 +470,7 @@ Este proyecto está bajo la Licencia MIT. Ver `LICENSE` para más detalles.
 
 Para soporte técnico o preguntas sobre implementación:
 
-- 📧 Email: soporte@nutrichain.com
+- 📧 Email: <soporte@nutrichain.com>
 - 📖 Documentación: Ver `/docs` en cada servicio
 - 🐛 Issues: Usar GitHub Issues para reportar problemas
 

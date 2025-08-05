@@ -1,0 +1,49 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: containers
+    # Usamos la auto-detección de contenedores de Docker, que es más eficiente
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+    # Con relabel_configs, extraemos metadatos del contenedor y los convertimos en etiquetas
+    relabel_configs:
+      # Extrae el nombre del servicio (ej: 'catalogo-service') a la etiqueta 'service'
+      - source_labels:
+          ["__meta_docker_container_label_com_docker_compose_service"]
+        target_label: "service"
+      # Extrae el nombre del contenedor (ej: 'catalogo_service') a la etiqueta 'container'
+      - source_labels: ["__meta_docker_container_name"]
+        regex: "/(.*)"
+        target_label: "container"
+
+    # El pipeline procesa cada línea de log antes de enviarla a Loki
+    pipeline_stages:
+      # 1. Parsea la línea de log como JSON (porque configuramos Monolog para ello)
+      - json:
+          expressions:
+            # Extrae el campo 'message' del JSON al log principal
+            message: message
+            # Extrae el campo 'level_name' del JSON a una variable temporal 'level'
+            level: level_name
+            # Extrae el campo 'channel' (ej: 'app') a una variable temporal 'channel'
+            channel: channel
+            # Extrae todo el objeto 'context' a una variable temporal 'context'
+            context: context
+
+      # 2. Crea etiquetas a partir de los campos parseados
+      - labels:
+          level:
+          channel:
+
+      # 3. Formatea la línea de salida final
+      - output:
+          source: message

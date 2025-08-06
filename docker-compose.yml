@@ -158,17 +158,13 @@ services:
     volumes:
       - ./reportes-service:/app
     depends_on:
-      - db
-      - redis
       - almacen-service
       - catalogo-service
       - tienda-service
     environment:
-      DATABASE_URL: "postgresql://user:password@db:5432/reportes_db"
       ALMACEN_SERVICE_URL: "http://almacen-service:8000"
       CATALOGO_SERVICE_URL: "http://catalogo-service:80"
       TIENDA_SERVICE_URL: "http://tienda-service:8003"
-      REDIS_URL: "redis://redis:6379/2"
       ENVIRONMENT: "development"
       DEBUG: "true"
       LOG_LEVEL: "INFO"

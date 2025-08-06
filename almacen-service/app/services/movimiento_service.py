@@ -49,21 +49,54 @@ class MovimientoService:
         self.movimiento_repository = MovimientoRepository(db)
         self.stock_repository = StockRepository(db)
     
+    def _validar_producto(self, producto_id: int) -> None:
+        """Validar que el producto existe y está activo en el catálogo"""
+        if not catalogo_service.verificar_producto_existe_sync(producto_id):
+            raise NotFoundError(f"El producto con ID {producto_id} no existe en el catálogo")
+    
+    def _validar_almacen(self, almacen_id: int) -> None:
+        """Validar que el almacén existe y está activo"""
+        from ..models.almacen import Almacen
+        almacen = self.db.query(Almacen).filter(Almacen.id == almacen_id).first()
+        
+        if not almacen:
+            raise NotFoundError(f"El almacén con ID {almacen_id} no existe")
+        
+        if not almacen.activo:
+            raise ValidationError(f"El almacén '{almacen.nombre}' no está activo")
+    
+    def _validar_stock_disponible(self, producto_id: int, almacen_id: int, cantidad_requerida: float) -> None:
+        """Validar que hay stock suficiente para una salida"""
+        stock = self.stock_repository.get_by_almacen_and_producto(almacen_id, producto_id)
+        
+        if not stock:
+            raise ValidationError(
+                f"No hay stock del producto {producto_id} en el almacén {almacen_id}"
+            )
+        
+        cantidad_disponible = stock.cantidad_actual - stock.cantidad_reservada
+        if cantidad_disponible < cantidad_requerida:
+            raise BusinessLogicError(
+                f"Stock insuficiente para producto {producto_id} en almacén {almacen_id}. "
+                f"Disponible: {cantidad_disponible}, Requerido: {cantidad_requerida}"
+            )
+    
     def crear_movimiento_entrada(self, movimiento_data: MovimientoEntrada) -> MovimientoResponse:
         """
-        Crear movimiento de entrada (TRANSACCIÓN ATÓMICA)
+        Crear movimiento de entrada con validaciones completas
         
-        NIVEL SENIOR - VALIDACIONES CRÍTICAS:
-        1. Verificar existencia del producto en Catálogo (fail-fast)
-        2. Crear stock inicial si no existe
-        3. Registrar movimiento para auditabilidad completa
+        Validaciones automáticas:
+        - Existencia del producto en catálogo
+        - Estado activo del producto
+        - Existencia y estado activo del almacén
+        - Creación automática de stock si no existe
         """
         try:
-            # PASO 1: VALIDACIÓN CRÍTICA - Producto debe existir en Catálogo
-            if not catalogo_service.verificar_producto_existe_sync(movimiento_data.producto_id):
-                raise NotFoundError(f"El producto con ID {movimiento_data.producto_id} no existe en el catálogo")
+            # Validaciones centralizadas
+            self._validar_producto(movimiento_data.producto_id)
+            self._validar_almacen(movimiento_data.almacen_destino_id)
             
-            # PASO 2: Buscar o crear stock usando producto_id y almacen_destino_id
+            # Buscar o crear stock
             stock = self.stock_repository.get_by_almacen_and_producto(
                 movimiento_data.almacen_destino_id, 
                 movimiento_data.producto_id
@@ -80,7 +113,7 @@ class MovimientoService:
                 )
                 stock = self.stock_repository.create(stock_data.model_dump())
             
-            # Crear el movimiento ANTES de actualizar stock (para auditoría)
+            # Crear el movimiento
             movimiento_dict = movimiento_data.model_dump()
             movimiento_dict['tipo_movimiento'] = TipoMovimientoEnum.ENTRADA
             movimiento_dict['estado'] = EstadoMovimientoEnum.PROCESADO
@@ -89,12 +122,11 @@ class MovimientoService:
             
             movimiento = self.movimiento_repository.create(movimiento_dict)
             
-            # Actualizar stock DESPUÉS del movimiento (transacción atómica)
+            # Actualizar stock
             stock.cantidad_actual += movimiento_data.cantidad
             stock.updated_at = datetime.utcnow()
             
             self.db.commit()
-            
             return MovimientoResponse.model_validate(movimiento)
             
         except Exception as e:
@@ -102,42 +134,38 @@ class MovimientoService:
             if isinstance(e, (NotFoundError, ValidationError, BusinessLogicError)):
                 raise
             raise BusinessLogicError(f"Error al crear movimiento de entrada: {str(e)}")
+            self.db.rollback()
+            if isinstance(e, (NotFoundError, ValidationError, BusinessLogicError)):
+                raise
+            raise BusinessLogicError(f"Error al crear movimiento de entrada: {str(e)}")
     
     def crear_movimiento_salida(self, movimiento_data: MovimientoSalida) -> MovimientoResponse:
         """
-        Crear movimiento de salida (TRANSACCIÓN ATÓMICA)
+        Crear movimiento de salida con validaciones completas
         
-        NIVEL SENIOR - VALIDACIONES CRÍTICAS:
-        1. Verificar existencia del producto en Catálogo (fail-fast)
-        2. Validar stock disponible antes de la salida
-        3. Registrar movimiento para auditabilidad completa
+        Validaciones automáticas:
+        - Existencia del producto en catálogo
+        - Estado activo del producto
+        - Existencia y estado activo del almacén
+        - Disponibilidad de stock suficiente
         """
         try:
-            # PASO 1: VALIDACIÓN CRÍTICA - Producto debe existir en Catálogo
-            if not catalogo_service.verificar_producto_existe_sync(movimiento_data.producto_id):
-                raise NotFoundError(f"El producto con ID {movimiento_data.producto_id} no existe en el catálogo")
+            # Validaciones centralizadas
+            self._validar_producto(movimiento_data.producto_id)
+            self._validar_almacen(movimiento_data.almacen_origen_id)
+            self._validar_stock_disponible(
+                movimiento_data.producto_id, 
+                movimiento_data.almacen_origen_id, 
+                movimiento_data.cantidad
+            )
             
-            # PASO 2: Buscar stock usando producto_id y almacen_origen_id
+            # Buscar stock
             stock = self.stock_repository.get_by_almacen_and_producto(
                 movimiento_data.almacen_origen_id, 
                 movimiento_data.producto_id
             )
             
-            if not stock:
-                raise NotFoundError(
-                    f"No se encontró stock para producto {movimiento_data.producto_id} "
-                    f"en almacén {movimiento_data.almacen_origen_id}"
-                )
-            
-            # Validación de stock disponible
-            cantidad_disponible = stock.cantidad_actual - stock.cantidad_reservada
-            if cantidad_disponible < movimiento_data.cantidad:
-                raise ValidationError(
-                    f"Stock insuficiente. Disponible: {cantidad_disponible}, "
-                    f"Solicitado: {movimiento_data.cantidad}"
-                )
-            
-            # Crear el movimiento ANTES de actualizar stock (para auditoría)
+            # Crear el movimiento
             movimiento_dict = movimiento_data.model_dump()
             movimiento_dict['tipo_movimiento'] = TipoMovimientoEnum.SALIDA
             movimiento_dict['estado'] = EstadoMovimientoEnum.PROCESADO
@@ -146,11 +174,18 @@ class MovimientoService:
             
             movimiento = self.movimiento_repository.create(movimiento_dict)
             
-            # Actualizar stock DESPUÉS del movimiento (transacción atómica)
+            # Actualizar stock
             stock.cantidad_actual -= movimiento_data.cantidad
             stock.updated_at = datetime.utcnow()
             
             self.db.commit()
+            return MovimientoResponse.model_validate(movimiento)
+            
+        except Exception as e:
+            self.db.rollback()
+            if isinstance(e, (NotFoundError, ValidationError, BusinessLogicError)):
+                raise
+            raise BusinessLogicError(f"Error al crear movimiento de salida: {str(e)}")
             
             return MovimientoResponse.model_validate(movimiento)
             
@@ -471,3 +506,72 @@ class MovimientoService:
             if isinstance(e, (NotFoundError, ValidationError, BusinessLogicError)):
                 raise
             raise BusinessLogicError(f"Error al crear movimiento de salida con stock: {str(e)}")
+
+    # =====================================================================
+    # MÉTODOS PARA MOVIMIENTOS MÚLTIPLES (BATCH OPERATIONS)
+    # =====================================================================
+
+    def crear_movimientos_salida_multiple(self, movimientos_data: List[MovimientoSalida]) -> List[MovimientoResponse]:
+        """
+        Crear múltiples movimientos de salida con validaciones completas
+        
+        Procesamiento atómico: si un movimiento falla, toda la operación se revierte
+        Cada movimiento puede ser de diferentes productos y almacenes
+        """
+        if not movimientos_data:
+            raise ValidationError("Debe proporcionar al menos un movimiento")
+        
+        try:
+            # Validar todos los movimientos antes de procesar
+            for movimiento_data in movimientos_data:
+                self._validar_producto(movimiento_data.producto_id)
+                self._validar_almacen(movimiento_data.almacen_origen_id)
+                self._validar_stock_disponible(
+                    movimiento_data.producto_id,
+                    movimiento_data.almacen_origen_id,
+                    movimiento_data.cantidad
+                )
+            
+            # Procesar todos los movimientos
+            movimientos_creados = []
+            for movimiento_data in movimientos_data:
+                movimiento_creado = self.crear_movimiento_salida(movimiento_data)
+                movimientos_creados.append(movimiento_creado)
+            
+            return movimientos_creados
+            
+        except Exception as e:
+            self.db.rollback()
+            if isinstance(e, (NotFoundError, ValidationError, BusinessLogicError)):
+                raise
+            raise BusinessLogicError(f"Error al crear movimientos de salida múltiples: {str(e)}")
+
+    def crear_movimientos_entrada_multiple(self, movimientos_data: List[MovimientoEntrada]) -> List[MovimientoResponse]:
+        """
+        Crear múltiples movimientos de entrada con validaciones completas
+        
+        Procesamiento atómico: si un movimiento falla, toda la operación se revierte
+        Cada movimiento puede ser de diferentes productos y almacenes
+        """
+        if not movimientos_data:
+            raise ValidationError("Debe proporcionar al menos un movimiento")
+        
+        try:
+            # Validar todos los movimientos antes de procesar
+            for movimiento_data in movimientos_data:
+                self._validar_producto(movimiento_data.producto_id)
+                self._validar_almacen(movimiento_data.almacen_destino_id)
+            
+            # Procesar todos los movimientos
+            movimientos_creados = []
+            for movimiento_data in movimientos_data:
+                movimiento_creado = self.crear_movimiento_entrada(movimiento_data)
+                movimientos_creados.append(movimiento_creado)
+            
+            return movimientos_creados
+            
+        except Exception as e:
+            self.db.rollback()
+            if isinstance(e, (NotFoundError, ValidationError, BusinessLogicError)):
+                raise
+            raise BusinessLogicError(f"Error al crear movimientos de entrada múltiples: {str(e)}")

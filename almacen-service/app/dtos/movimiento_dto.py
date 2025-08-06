@@ -2,7 +2,7 @@
 DTOs (Data Transfer Objects) para Movimientos
 """
 
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from decimal import Decimal
 from datetime import datetime
 from pydantic import BaseModel, Field, validator
@@ -205,3 +205,21 @@ class MovimientoConStockDTO(BaseModel):
     """DTO para respuesta combinada de movimiento y stock actualizado"""
     movimiento: MovimientoResponseDTO
     stock_actualizado: Optional[StockActualizadoDTO]
+
+
+# ===== DTOs para Operaciones Múltiples =====
+
+class MovimientosEntradaDTO(BaseModel):
+    """DTO para múltiples movimientos de entrada"""
+    movimientos: List[MovimientoEntradaDTO] = Field(..., min_items=1, description="Lista de movimientos de entrada")
+
+class MovimientosSalidaDTO(BaseModel):
+    """DTO para múltiples movimientos de salida"""
+    movimientos: List[MovimientoSalidaDTO] = Field(..., min_items=1, description="Lista de movimientos de salida")
+
+class MovimientosMultipleResponseDTO(BaseModel):
+    """DTO para respuesta de operaciones múltiples"""
+    movimientos_procesados: List[MovimientoResponseDTO]
+    total_procesados: int
+    errores: List[str] = []
+    resumen: Dict[str, Any] = {}

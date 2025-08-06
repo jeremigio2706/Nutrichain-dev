@@ -12,7 +12,7 @@ ARQUITECTURA LIMPIA:
 - Única fuente de verdad para modificaciones de inventario
 """
 
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Union
 from datetime import date
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
@@ -26,6 +26,9 @@ from ..dtos.movimiento_dto import (
     MovimientoAjusteInicialDTO,
     MovimientoResponseDTO,
     MovimientoListDTO,
+    MovimientosEntradaDTO,
+    MovimientosSalidaDTO,
+    MovimientosMultipleResponseDTO,
     TipoMovimientoEnum
 )
 
@@ -41,28 +44,59 @@ def get_movimiento_service(db: Session = Depends(get_db)) -> MovimientoService:
 # ENDPOINTS PARA MODIFICAR STOCK (ÚNICA FUENTE DE VERDAD)
 # =====================================================================
 
-@router.post("/entrada", response_model=MovimientoResponseDTO, status_code=status.HTTP_201_CREATED)
+@router.post("/entrada")
 def crear_movimiento_entrada(
-    movimiento_data: MovimientoEntradaDTO,
+    request_data: Union[MovimientoEntradaDTO, MovimientosEntradaDTO],
     service: MovimientoService = Depends(get_movimiento_service)
 ):
     """
-    Crear movimiento de entrada de inventario
-    TRANSACCIÓN ATÓMICA: Crea movimiento + actualiza stock
+    Crear uno o múltiples movimientos de entrada de inventario
+    
+    Acepta:
+    - MovimientoEntradaDTO: Para un solo movimiento
+    - MovimientosEntradaDTO: Para múltiples movimientos
+    
+    Validaciones automáticas:
+    - Existencia del producto en catálogo
+    - Estado activo del producto
+    - Existencia y estado activo del almacén
+    - Integridad de datos y transacciones atómicas
     """
-    return service.crear_movimiento_entrada(movimiento_data)
+    # Determinar si es operación individual o múltiple
+    if hasattr(request_data, 'movimientos'):
+        # Es una operación múltiple
+        return service.crear_movimientos_entrada_multiple(request_data.movimientos)
+    else:
+        # Es una operación individual
+        return service.crear_movimiento_entrada(request_data)
 
 
-@router.post("/salida", response_model=MovimientoResponseDTO, status_code=status.HTTP_201_CREATED)
+@router.post("/salida")
 def crear_movimiento_salida(
-    movimiento_data: MovimientoSalidaDTO,
+    request_data: Union[MovimientoSalidaDTO, MovimientosSalidaDTO],
     service: MovimientoService = Depends(get_movimiento_service)
 ):
     """
-    Crear movimiento de salida de inventario
-    VALIDACIONES: Stock disponible + transacción atómica
+    Crear uno o múltiples movimientos de salida de inventario
+    
+    Acepta:
+    - MovimientoSalidaDTO: Para un solo movimiento
+    - MovimientosSalidaDTO: Para múltiples movimientos
+    
+    Validaciones automáticas:
+    - Existencia del producto en catálogo
+    - Estado activo del producto
+    - Existencia y estado activo del almacén
+    - Disponibilidad de stock suficiente
+    - Integridad de datos y transacciones atómicas
     """
-    return service.crear_movimiento_salida(movimiento_data)
+    # Determinar si es operación individual o múltiple
+    if hasattr(request_data, 'movimientos'):
+        # Es una operación múltiple
+        return service.crear_movimientos_salida_multiple(request_data.movimientos)
+    else:
+        # Es una operación individual
+        return service.crear_movimiento_salida(request_data)
 
 
 @router.post("/transferencia", response_model=MovimientoResponseDTO, status_code=status.HTTP_201_CREATED)
